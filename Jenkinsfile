@@ -31,6 +31,18 @@ pipeline {
             }
         }
 
+
+
+        stage('Hello_helm') {
+            steps {
+                script {
+                bat 'helm'
+                }
+            }
+        }
+
+
+        
         stage('Deploy to K8s (Helm)') {
             steps {
                 script {
