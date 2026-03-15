@@ -2,9 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // היוזר שלך בדוקר האב
         DOCKERHUB_USER = "nafrin" 
-        
         RELEASE_NAME = "my-calendar"
         CHART_DIR = "./calendar-chart"
         KUBECONFIG = "C:\\Users\\MyPc\\.kube\\config"
@@ -30,13 +28,25 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
+        stage('Test Built Image (Pre-Push)') {
             steps {
                 script {
-                    echo "🧪 Running PyTest inside the Calendar API container..."
-                    // הרצת הטסט מתוך קונטיינר זמני כדי לוודא שהקוד תקין
-                    bat 'docker run --rm calendar-api:latest python -m pytest test_api.py -v'
-                    echo "✅ Tests passed! The code is safe for deployment."
+                    echo "🚀 Starting a temporary container from the newly built image..."
+                    // מריץ את האימג' ברקע על פורט 5099 כדי לא להתנגש עם דברים אחרים
+                    bat 'docker run -d --name temp-api-test -p 5099:5001 calendar-api:latest'
+                    
+                    try {
+                        echo "🧪 Running Tests against the temporary container..."
+                        // מריץ את קובץ הבדיקה מול הקונטיינר הזמני
+                        bat '''
+                        docker run --rm -e TEST_URL="http://host.docker.internal:5099/health" -v "%WORKSPACE%:/app" -w /app python:3.9-slim sh -c "pip install pytest requests && pytest test_api_live.py -v -s"
+                        '''
+                        echo "✅ Tests passed! The image is solid and ready to be pushed."
+                    } finally {
+                        echo "🧹 Cleaning up temporary container..."
+                        // בלוק זה ירוץ תמיד וימחק את הקונטיינר הזמני, כדי שלא נשאיר "לכלוך" בשרת
+                        bat 'docker rm -f temp-api-test'
+                    }
                 }
             }
         }
@@ -45,9 +55,7 @@ pipeline {
             steps {
                 script {
                     echo "🔒 Logging into Docker Hub..."
-                    // שימוש ב-ID המדויק שיצרת בג'נקינס
                     withCredentials([usernamePassword(credentialsId: 'docker_hub_user', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        // התחברות לדוקר
                         bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
                         
                         echo "🏷️ Tagging images..."
@@ -89,10 +97,10 @@ pipeline {
 
     post {
         success {
-            echo "🎉 SUCCESS! Tested, pushed to Docker Hub, and deployed to Kubernetes."
+            echo "🎉 SUCCESS! Image built, tested locally, pushed to Docker Hub, and deployed to K8s!"
         }
         failure {
-            echo "❌ FAILED! The pipeline stopped. If tests failed, the buggy code was NOT deployed."
+            echo "❌ FAILED! The pipeline stopped. Check the logs. If the test failed, NOTHING was pushed to Docker Hub."
         }
     }
 }
