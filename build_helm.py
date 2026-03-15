@@ -11,6 +11,8 @@ appVersion: "1.0.0"
 
     "calendar-chart/values.yaml": """# הגדרות מרכזיות לכל המערכת
 
+appVersion: "latest"
+
 mongodb:
   image: mongo:latest
   port: 27017
@@ -174,6 +176,8 @@ spec:
           value: "http://localhost:{{ .Values.front.servicePort }}"
         - name: EXT_API_URL
           value: "http://localhost:{{ .Values.api.servicePort }}"
+        - name: APP_VERSION
+          value: "{{ .Values.appVersion }}"
         ports:
         - containerPort: {{ .Values.dashboard.targetPort }}
 ---
