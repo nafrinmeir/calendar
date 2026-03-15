@@ -1,0 +1,30 @@
+# הגדרות מרכזיות לכל המערכת
+
+appVersion: "latest"
+
+mongodb:
+  image: mongo:latest
+  port: 27017
+  # שם מסד נתונים נפרד לחלוטין עבור K8s
+  dbName: calendar_k8s_db
+
+api:
+  image: nafrin/calendar-api:latest
+  pullPolicy: Always
+  targetPort: 5001
+  servicePort: 5011
+  replicas: 1
+
+front:
+  image: nafrin/calendar-front:latest
+  pullPolicy: Always
+  targetPort: 5002
+  servicePort: 5012
+  replicas: 1
+
+dashboard:
+  image: nafrin/dashboard:latest
+  pullPolicy: Always
+  targetPort: 5000
+  servicePort: 5010
+  replicas: 1

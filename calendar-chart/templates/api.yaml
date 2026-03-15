@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendar-api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app: calendar-api
+  template:
+    metadata:
+      labels:
+        app: calendar-api
+    spec:
+      containers:
+      - name: calendar-api
+        image: {{ .Values.api.image }}
+        imagePullPolicy: {{ .Values.api.pullPolicy }}
+        env:
+        - name: MONGO_URI
+          # חיבור ישיר ל-DB הנפרד שיצרנו
+          value: "mongodb://mongodb:{{ .Values.mongodb.port }}/{{ .Values.mongodb.dbName }}"
+        ports:
+        - containerPort: {{ .Values.api.targetPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calendar-api
+spec:
+  type: LoadBalancer # זה מה שחוסך את ה-Port Forward!
+  selector:
+    app: calendar-api
+  ports:
+  - port: {{ .Values.api.servicePort }}
+    targetPort: {{ .Values.api.targetPort }}

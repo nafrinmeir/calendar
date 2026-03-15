@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+spec:
+  replicas: {{ .Values.dashboard.replicas }}
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: {{ .Values.dashboard.image }}
+        imagePullPolicy: {{ .Values.dashboard.pullPolicy }}
+        env:
+        - name: FRONT_URL
+          value: "http://calendar-front:{{ .Values.front.servicePort }}/health"
+        - name: API_URL
+          value: "http://calendar-api:{{ .Values.api.servicePort }}/health"
+        - name: EXT_FRONT_URL
+          value: "http://localhost:{{ .Values.front.servicePort }}"
+        - name: EXT_API_URL
+          value: "http://localhost:{{ .Values.api.servicePort }}"
+        - name: APP_VERSION
+          value: "{{ .Values.appVersion }}"
+        ports:
+        - containerPort: {{ .Values.dashboard.targetPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+spec:
+  type: LoadBalancer # חשוף החוצה
+  selector:
+    app: dashboard
+  ports:
+  - port: {{ .Values.dashboard.servicePort }}
+    targetPort: {{ .Values.dashboard.targetPort }}

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendar-front
+spec:
+  replicas: {{ .Values.front.replicas }}
+  selector:
+    matchLabels:
+      app: calendar-front
+  template:
+    metadata:
+      labels:
+        app: calendar-front
+    spec:
+      containers:
+      - name: calendar-front
+        image: {{ .Values.front.image }}
+        imagePullPolicy: {{ .Values.front.pullPolicy }}
+        env:
+        - name: API_URL
+          value: "http://localhost:{{ .Values.api.servicePort }}"
+        - name: APP_VERSION
+          value: "{{ .Values.appVersion }}"
+        ports:
+        - containerPort: {{ .Values.front.targetPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calendar-front
+spec:
+  type: LoadBalancer # חשוף החוצה
+  selector:
+    app: calendar-front
+  ports:
+  - port: {{ .Values.front.servicePort }}
+    targetPort: {{ .Values.front.targetPort }}
