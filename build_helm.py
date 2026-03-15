@@ -129,6 +129,8 @@ spec:
         env:
         - name: API_URL
           value: "http://localhost:{{ .Values.api.servicePort }}"
+        - name: APP_VERSION
+          value: "{{ .Values.appVersion }}"
         ports:
         - containerPort: {{ .Values.front.targetPort }}
 ---
